@@ -70,8 +70,9 @@ namespace marin_dlt_truncation
     class element_transform
     {
         public:
-            explicit element_transform(std::array<uint32_t,3> shape):shape(shape)
+            explicit element_transform(std::array<uint32_t,3> shape)
             {
+                this->shape=shape;
                 element_size=shape[0]*shape[1]*shape[2];
                 node_weights.assign(element_size,1);
                 for (int axis=0;axis<3;axis++)
@@ -277,7 +278,10 @@ namespace marin_dlt_truncation
     class bit_writer
     {
         public:
-            explicit bit_writer(std::vector<unsigned char> &output):output(output){}
+            explicit bit_writer(std::vector<unsigned char> &output)
+            {
+                this->output=&output;
+            }
             // 写入bits的低n位，n不超过32
             void write(uint32_t bits,int n)
             {
@@ -285,7 +289,7 @@ namespace marin_dlt_truncation
                 count+=n;
                 while (count>=8)
                 {
-                    output.push_back(static_cast<unsigned char>(buffer));
+                    output->push_back(static_cast<unsigned char>(buffer));
                     buffer>>=8;
                     count-=8;
                 }
@@ -294,12 +298,12 @@ namespace marin_dlt_truncation
             void finish()
             {
                 if (count>0)
-                    output.push_back(static_cast<unsigned char>(buffer));
+                    output->push_back(static_cast<unsigned char>(buffer));
                 buffer=0;
                 count=0;
             }
         private:
-            std::vector<unsigned char> &output;
+            std::vector<unsigned char> *output; // 写入的目标，指向构造时传入的数组
             uint64_t buffer=0;
             int count=0;
     };
@@ -307,7 +311,11 @@ namespace marin_dlt_truncation
     class bit_reader
     {
         public:
-            bit_reader(const unsigned char *data,size_t size):data(data),size(size){}
+            bit_reader(const unsigned char *data,size_t size)
+            {
+                this->data=data;
+                this->size=size;
+            }
             uint32_t read(int n)
             {
                 while (count<n)
